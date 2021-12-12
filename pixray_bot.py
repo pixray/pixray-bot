@@ -29,6 +29,19 @@ class Commands(commands.Cog, name='Commands'):
         self.bot = bot
         self.uuids = {}
 
+    def create_embed(self, title, query, uuid, status, error, image_url=None):
+        embed = discord.Embed(
+            title=title,
+            color=0x4168B5
+        )
+        embed.add_field(name="Query", value=query, inline=False)
+        embed.add_field(name="UUID", value=uuid, inline=False)
+        embed.add_field(name="Status", value=status, inline=True)
+        embed.add_field(name="Error", value=error, inline=True)
+        if image_url is not None:
+            embed.set_image(url=image_url)
+        return embed
+
     @commands.command(name='create')
     @commands.has_role('attendee')
     async def create(self, context: commands.Context, *, query: str.lower):
@@ -52,16 +65,7 @@ class Commands(commands.Cog, name='Commands'):
         uuid = response['uuid']
         status = response['status']
         error = response['error']
-        embed = discord.Embed(
-            title="Getting started!",
-            color=0x4168B5
-        )
-        embed.add_field(name="Query", value=query, inline=False)
-        embed.add_field(name="UUID", value=uuid, inline=False)
-        embed.add_field(name="Status", value=status, inline=True)
-        embed.add_field(name="Error", value=error, inline=True)
         print(f'New session started ({uuid}) with status {status} and error {error}')
-        await context.send(embed=embed, delete_after=10)
 
         # Retain memory of query since multiple queries can be simultaneously sent
         self.uuids[uuid] = {
@@ -76,15 +80,7 @@ class Commands(commands.Cog, name='Commands'):
         t = 0
         while (status == 'queued' or status == 'processing') and (error == None):
             if t == 0:
-                # await context.send(f'Generating... Query -> \"{query}\". ID -> {uuid}. Status -> {status}.')
-                embed = discord.Embed(
-                    title="Generating 🌱",
-                    color=0x4168B5
-                )
-                embed.add_field(name="Query", value=query, inline=False)
-                embed.add_field(name="UUID", value=uuid, inline=False)
-                embed.add_field(name="Status", value=status, inline=True)
-                embed.add_field(name="Error", value=error, inline=True)
+                embed = self.create_embed("Generating 🌱", query, uuid, status, error)
                 await context.send(embed=embed)
             await asyncio.sleep(5)
             r = requests.get(poll_url)
@@ -115,15 +111,7 @@ class Commands(commands.Cog, name='Commands'):
 
         print(f'Download complete, data saved in {OUTFILE}')
         file = discord.File(OUTFILE, filename=OUTFILE)
-        embed = discord.Embed(
-            title="Generation complete 🪴",
-            color=0x4168B5
-        )
-        embed.add_field(name="Query", value=query, inline=False)
-        embed.add_field(name="UUID", value=uuid, inline=False)
-        embed.add_field(name="Status", value=status, inline=True)
-        embed.add_field(name="Error", value=error, inline=True)
-        embed.set_image(url=f"attachment://{OUTFILE}")
+        embed = self.create_embed("Generation complete 🪴", query, uuid, status, error, f"attachment://{OUTFILE}")
         author = deleted_uuid['author']
         await context.send(f'{author.mention}', file=file, embed=embed)
         return
@@ -156,6 +144,7 @@ class Commands(commands.Cog, name='Commands'):
             await context.send(f'{uuid} does not exist.', delete_after=5)
             return
 
+        author = self.uuids[uuid]['author'].nick
         query = self.uuids[uuid]['query']
         status = self.uuids[uuid]['status']
         error = self.uuids[uuid]['error']
@@ -163,10 +152,11 @@ class Commands(commands.Cog, name='Commands'):
             color=0x4168B5
         )
         embed.add_field(name="Query", value=query, inline=False)
-        embed.add_field(name="UUID", value=uuid, inline=False)
+        embed.add_field(name="UUID", value=uuid, inline=True)
+        embed.add_field(name="Author", value=author, inline=True)
         embed.add_field(name="Status", value=status, inline=True)
         embed.add_field(name="Error", value=error, inline=True)
-        await context.send(embed=embed, delete_after=10)
+        await context.send(embed=embed)
         return
 
     @status.error
@@ -179,6 +169,40 @@ class Commands(commands.Cog, name='Commands'):
             await context.author.send(f'This bot does not have the necessary permissions to post in {context.channel}.', delete_after=5)
         if isinstance(error, commands.errors.MissingRequiredArgument):
             await context.send('Missing required argument.', delete_after=5)
+
+    @commands.command(name='queue')
+    @commands.has_role('attendee')
+    async def queue(self, context: commands.Context):
+        """Display queue of queries being processed or queued by pixray."""
+        if context.author == self.bot.user:
+            return
+
+        print(self.uuids)
+        if not self.uuids:
+            await context.send('Queue is empty.', delete_after=5)
+            return
+
+        embed = discord.Embed(
+            title='Queries',
+            color=0x4168B5
+        )
+        for uuid, info in self.uuids.items():
+            embed.add_field(name="Query", value=info['query'], inline=True)
+            embed.add_field(name="UUID", value=uuid, inline=True)
+            embed.add_field(name="Author", value=info['author'].nick, inline=True)
+            embed.add_field(name='\u200B', value='\u200B', inline=False)
+
+        await context.send(embed=embed)
+        return
+
+    @queue.error
+    async def queue_error(self, context: commands.Context, error: commands.CommandError):
+        """Handle errors for the queue command."""
+        if isinstance(error, commands.errors.CheckFailure):
+            await context.send('You do not have the correct role for this command.', delete_after=5)
+        # TODO: this isn't messaging the user for some reason. Fix it.
+        if isinstance(error, discord.Forbidden):
+            await context.author.send(f'This bot does not have the necessary permissions to post in {context.channel}.', delete_after=5)
 
 bot.add_cog(Commands(bot))
 bot.run(TOKEN)
