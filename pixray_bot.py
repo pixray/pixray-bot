@@ -11,12 +11,21 @@ import discord
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-PIXRAY_API = "https://replicate.com/api/models/dribnet/pixray-api/versions/a249606da3a0c7f32eed4741f1e6f1792470a39a5825fc8814272cceea30ad32/predictions"
+PIXRAY_API = "https://replicate.com/api/v1/models/dribnet/pixray-api/versions/a249606da3a0c7f32eed4741f1e6f1792470a39a5825fc8814272cceea30ad32/predictions"
 PIXRAY_JSON = '{ "inputs": { "settings" :  { "prompts" : "%PROMPT%" } } }'
-HEADERS = {'Content-type': 'application/json'}
+HEADERS = {'Content-type': 'application/json', 'Authorization': 'Token %TOKEN%'}
+HEADERS_POLL = {'Authorization': 'Token %TOKEN%'}
 POLL_API = "https://replicate.com/api/models/dribnet/pixray-api/versions/a249606da3a0c7f32eed4741f1e6f1792470a39a5825fc8814272cceea30ad32/predictions"
 OUTPUT_PREFIX = "https://replicate.com/api/models/dribnet/pixray-api/files"
 OUTFILE = "outfile.png"
+
+## apply TOKEN based on enviromnet
+REPLICATE_TOKEN = os.environ.get('REPLICATE_TOKEN')
+if REPLICATE_TOKEN is None:
+    print("Please set REPLICATE_TOKEN in environment before running")
+    sys.exit(1)
+HEADERS['Authorization'] = HEADERS['Authorization'].replace("%TOKEN%", REPLICATE_TOKEN)
+HEADERS_POLL['Authorization'] = HEADERS_POLL['Authorization'].replace("%TOKEN%", REPLICATE_TOKEN)
 
 bot = commands.Bot(command_prefix='pixray/')
 
@@ -83,7 +92,7 @@ class Commands(commands.Cog, name='Commands'):
                 embed = self.create_embed("Generating 🌱", query, uuid, status, error)
                 await context.send(embed=embed)
             await asyncio.sleep(5)
-            r = requests.get(poll_url)
+            r = requests.get(poll_url, headers=HEADERS_POLL)
             response = r.json()
             status = response['prediction']['status']
             error = response['prediction']['error']
@@ -100,7 +109,7 @@ class Commands(commands.Cog, name='Commands'):
 
         out_url = f"{OUTPUT_PREFIX}/{response['prediction']['output_file']}"
         print(f'DONE! Downloading: {out_url}')
-        response = requests.get(out_url, stream=True)
+        response = requests.get(out_url, stream=True, headers=HEADERS_POLL)
 
         # Delete uuid from dictionary after successful generation
         deleted_uuid = self.uuids.pop(uuid, None)
