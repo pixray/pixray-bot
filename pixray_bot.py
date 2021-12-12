@@ -41,6 +41,7 @@ class Commands(commands.Cog, name='Commands'):
     def create_embed(self, title, query, uuid, status, error, image_url=None):
         embed = discord.Embed(
             title=title,
+            description="powered by replicate.com",
             color=0x4168B5
         )
         embed.add_field(name="Query", value=query, inline=False)
