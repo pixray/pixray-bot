@@ -33,6 +33,8 @@ bot = commands.Bot(command_prefix='pixray/')
 async def on_ready():
     print('We have successfully loggged in as {0.user}'.format(bot))
 
+status_working = ['preparing', 'queued', 'processing']
+
 class Commands(commands.Cog, name='Commands'):
     def __init__(self, bot):
         self.bot = bot
@@ -53,7 +55,7 @@ class Commands(commands.Cog, name='Commands'):
         return embed
 
     @commands.command(name='create')
-    @commands.has_role('attendee')
+    # @commands.has_role('attendee')
     async def create(self, context: commands.Context, *, query: str.lower):
         """Queries pixray to generate an image from the given text.
 
@@ -88,7 +90,7 @@ class Commands(commands.Cog, name='Commands'):
         poll_url = f'{POLL_API}/{uuid}'
 
         t = 0
-        while (status == 'queued' or status == 'processing') and (error == None):
+        while status in status_working and error == None:
             if t == 0:
                 embed = self.create_embed("Generating 🌱", query, uuid, status, error)
                 await context.send(embed=embed)
@@ -138,7 +140,7 @@ class Commands(commands.Cog, name='Commands'):
             await context.send('Missing required argument.', delete_after=5)
 
     @commands.command(name='status')
-    @commands.has_role('attendee')
+    # @commands.has_role('attendee')
     async def status(self, context: commands.Context, uuid: str):
         """Query the status of a pixray query given a uuid.
 
@@ -181,7 +183,7 @@ class Commands(commands.Cog, name='Commands'):
             await context.send('Missing required argument.', delete_after=5)
 
     @commands.command(name='queue')
-    @commands.has_role('attendee')
+    # @commands.has_role('attendee')
     async def queue(self, context: commands.Context):
         """Display queue of queries being processed or queued by pixray."""
         if context.author == self.bot.user:
