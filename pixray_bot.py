@@ -11,12 +11,12 @@ import discord
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-PIXRAY_API = "https://replicate.com/api/v1/models/dribnet/pixray-api/versions/a249606da3a0c7f32eed4741f1e6f1792470a39a5825fc8814272cceea30ad32/predictions"
-PIXRAY_JSON = '{ "inputs": { "settings" :  { "prompts" : "%PROMPT%" } } }'
+PIXRAY_API = "https://replicate.com/api/v1/models/pixray/api/versions/3a91754e77ee37f27531490d97f045085fc0ba84727dc2bf77cd18c2d110e324/predictions"
+PIXRAY_JSON = '{ "inputs": { "settings" :  { "prompts" : "%PROMPT%", "drawer": "vdiff", "vdiff_model": "cc12m_1_cfg", "quality": "better", "scale": 2.25, "custom_loss": "aesthetic:0.5" } } }'
 HEADERS = {'Content-type': 'application/json', 'Authorization': 'Token %TOKEN%'}
 HEADERS_POLL = {'Authorization': 'Token %TOKEN%'}
-POLL_API = "https://replicate.com/api/models/dribnet/pixray-api/versions/a249606da3a0c7f32eed4741f1e6f1792470a39a5825fc8814272cceea30ad32/predictions"
-OUTPUT_PREFIX = "https://replicate.com/api/models/dribnet/pixray-api/files"
+POLL_API = PIXRAY_API
+OUTPUT_PREFIX = "https://replicate.com/api/models/pixray/api/files"
 OUTFILE = "outfile.png"
 
 ## apply TOKEN based on enviromnet
