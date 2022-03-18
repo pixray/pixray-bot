@@ -11,7 +11,7 @@ import discord
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-PIXRAY_API = "https://replicate.com/api/v1/models/pixray/api/versions/3a91754e77ee37f27531490d97f045085fc0ba84727dc2bf77cd18c2d110e324/predictions"
+PIXRAY_API = "https://replicate.com/api/v1/models/pixray/api/versions/6addca4edde007986704548c11ec6e606ffc6121ebe66e2ba021475ee586fc09/predictions"
 PIXRAY_JSON = '{ "inputs": { "settings" :  { "prompts" : "%PROMPT%", "drawer": "vdiff", "vdiff_model": "cc12m_1_cfg", "quality": "better", "scale": 2.25, "custom_loss": "aesthetic:0.5" } } }'
 HEADERS = {'Content-type': 'application/json', 'Authorization': 'Token %TOKEN%'}
 HEADERS_POLL = {'Authorization': 'Token %TOKEN%'}
